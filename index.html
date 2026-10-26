@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKINKRAFT — Симулятор апгрейду скінів</title>
+<meta name="description" content="SKINKRAFT: безкоштовний демо-симулятор апгрейду скінів у стилі Standoff 2. 200+ предметів, завдання, промокоди та магазин.">
+<meta name="keywords" content="skinkraft, standoff 2, апгрейд скінів, симулятор, скінкрафт">
+<meta property="og:title" content="SKINKRAFT — Симулятор апгрейду скінів">
+<meta property="og:description" content="Апгрейди, 200+ скінів, завдання та промокоди. Спробуй безкоштовно!">
+
+<style>
+:root{--bg:#070a12;--panel:#0e1420;--panel2:#141c2b;--line:#223049;--gold:#ffb020;--gold2:#ff6a00;--txt:#eaf0ff;--muted:#77839b}
+[data-theme="light"]{--bg:#f5f5f5;--panel:#fff;--panel2:#f0f0f0;--line:#d0d0d0;--txt:#1a1a1a;--muted:#666}
+[data-theme="halloween"]{--bg:#0a0510;--panel:#1a0a20;--panel2:#2a1030;--line:#4a1a5a;--gold:#ff6600;--gold2:#cc0000;--txt:#ffccff;--muted:#9966aa}
+[data-theme="christmas"]{--bg:#0a1a0a;--panel:#1a2a1a;--panel2:#2a3a2a;--line:#3a5a3a;--gold:#ff3333;--gold2:#00aa00;--txt:#fff;--muted:#88aa88}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",sans-serif}
+body{background:var(--bg);color:var(--txt);min-height:100vh;transition:.3s;overflow-x:hidden}
+.deco{position:fixed;font-size:30px;opacity:.2;pointer-events:none;animation:float 20s linear infinite;z-index:0}
+@keyframes float{from{transform:translateX(-100vw)}to{transform:translateX(100vw)}}
+header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:10px}
+.logo{font-size:24px;font-weight:900;letter-spacing:1px}
+.logo b{color:var(--gold)}
+nav{display:flex;gap:5px;flex-wrap:wrap}
+.nav{background:transparent;border:1px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px}
+.nav.active{background:var(--gold);color:#111;border-color:var(--gold)}
+.money{background:var(--panel2);border:1px solid var(--gold);border-radius:8px;padding:8px 14px;font-weight:800;color:var(--gold)}
+.btn{border:none;border-radius:8px;padding:9px 14px;font-weight:800;font-size:12px;cursor:pointer;background:var(--gold);color:#111}
+.btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+main{max-width:1200px;margin:auto;padding:20px;position:relative;z-index:1}
+.section{display:none}.section.active{display:block}
+h2{margin-bottom:15px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:15px}
+.box h4{color:var(--gold);margin-bottom:10px;font-size:14px}
+
+.arena{display:grid;grid-template-columns:1fr 200px 1fr;gap:15px;margin-bottom:20px;align-items:stretch}
+.slot{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:260px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.slot.filled{border-color:var(--gold);box-shadow:0 0 30px rgba(255,176,32,.3)}
+.slot-tag{position:absolute;top:10px;left:12px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.slot-model{font-size:100px;animation:spin3d 4s linear infinite;display:inline-block}
+@keyframes spin3d{0%{transform:rotateY(0) rotateX(10deg)}50%{transform:rotateY(180deg) rotateX(-10deg)}100%{transform:rotateY(360deg) rotateX(10deg)}}
+.slot-info{text-align:center;padding:8px}
+.slot-info .n{font-weight:800;font-size:14px}
+.slot-info .p{color:var(--gold);font-weight:800;margin-top:4px}
+
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.wheel{position:relative;width:180px;height:180px}
+.wheel svg{width:100%;height:100%}
+.track{fill:none;stroke:var(--line);stroke-width:12}
+.arc-win{fill:none;stroke:#22c55e;stroke-width:12;transition:stroke-dasharray .5s}
+.arc-lose{fill:none;stroke:#ef4444;stroke-width:12;transition:stroke-dasharray .5s}
+.needle{position:absolute;left:50%;top:0;width:4px;height:95px;background:var(--gold);transform-origin:50% 100%;transform:translateX(-50%) rotate(0);border-radius:2px;box-shadow:0 0 15px var(--gold);z-index:10}
+.needle::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:16px solid var(--gold)}
+.needle::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:16px;height:16px;background:var(--gold);border-radius:50%;box-shadow:0 0 15px var(--gold)}
+.wheel-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.wheel-mid b{font-size:30px;color:var(--gold)}
+.spin-btn{width:100%;padding:14px;font-size:14px;letter-spacing:2px}
+.spin-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
+.chip.active{background:var(--gold);color:#111;border-color:var(--gold)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:400px;overflow-y:auto;padding:5px}
+.card{background:var(--panel2);border:1px solid var(--line);border-bottom:3px solid var(--rc);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:.2s;position:relative}
+.card:hover{transform:translateY(-3px);border-color:var(--gold)}
+.card .emoji{font-size:40px;display:block;animation:spin3d 5s linear infinite}
+.card .nm{font-size:11px;font-weight:700;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .pr{font-size:11px;color:var(--gold);font-weight:800;margin-top:3px}
+.card .cnt{position:absolute;top:5px;right:5px;background:var(--gold);color:#111;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+.empty{grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)}
+
+.task{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.task-info{flex:1;min-width:200px}
+.task-title{font-weight:700;margin-bottom:3px}
+.task-desc{color:var(--muted);font-size:12px}
+.task-reward{color:var(--gold);font-weight:800;margin-top:3px}
+.task-btn{background:#22c55e;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:800;cursor:pointer}
+.task-btn:disabled{background:#555;cursor:not-allowed}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:15px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px;text-align:center}
+.stat-v{font-size:26px;font-weight:900;color:var(--gold)}
+.stat-l{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:4px}
+
+.promo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.promo-code{background:var(--panel2);border:1px dashed var(--gold);border-radius:8px;padding:8px;text-align:center;font-family:monospace;font-weight:700;color:var(--gold);font-size:12px}
+
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--line)}
+.ok{color:#4ade80;font-weight:800}.no{color:#ff7189;font-weight:800}
+
+.theme-btns,.lang-btns{display:flex;gap:6px;flex-wrap:wrap}
+.theme-btn,.lang-btn{background:var(--panel2);border:2px solid var(--line);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:12px}
+.theme-btn.active,.lang-btn.active{background:var(--gold);color:#111;border-color:var(--gold)}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);color:var(--txt);padding:10px 20px;border-radius:8px;z-index:999;animation:fade .3s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.result{margin:15px auto;padding:14px;border-radius:10px;text-align:center;font-weight:800;display:none}
+.result.show{display:block}
+.result.win{background:rgba(34,197,94,.15);border:1px solid #22c55e;color:#4ade80}
+.result.lose{background:rgba(255,59,92,.15);border:1px solid #ff3b5c;color:#ff7189}
+
+input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--txt);flex:1;font-size:14px}
+input:focus{outline:none;border-color:var(--gold)}
+
+@media(max-width:768px){
+ .arena{grid-template-columns:1fr}
+ .center{order:-1}
+ nav{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="logo">⚡ SKIN<b>KRAFT</b></div>
+  <nav>
+    <button class="nav active" data-tab="upgrade">⚡ Апгрейд</button>
+    <button class="nav" data-tab="shop">🛒 Магазин</button>
+    <button class="nav" data-tab="tasks">💰 Завдання</button>
+    <button class="nav" data-tab="inventory">🎒 Інвентар</button>
+    <button class="nav" data-tab="history">📜 Історія</button>
+    <button class="nav" data-tab="profile">👤 Профіль</button>
+    <button class="nav" data-tab="settings">⚙️ Теми</button>
+  </nav>
+  <div class="money">💎 <span id="bal">5000</span></div>
+</header>
+
+<main>
+<section id="upgrade" class="section active">
+  <h2>⚡ Апгрейд предметів</h2>
+  <div class="box">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <div><b style="font-size:11px;color:var(--muted)">МНОЖНИК:</b><div class="chips" id="multChips"></div></div>
+      <div><b style="font-size:11px;color:var(--muted)">ШАНС:</b><div class="chips" id="chanceChips"></div></div>
+    </div>
+    <button class="btn" id="autoBtn" style="background:#22c55e;color:#fff">🎯 Автопідбір</button>
+  </div>
+
+  <div class="arena">
+    <div class="slot" id="slotS">
+      <div class="slot-tag">01 / Ваш предмет</div>
+      <div class="slot-model" id="modelS"></div>
+      <div class="slot-info"><div class="n" id="nameS">—</div><div class="p" id="priceS"></div></div>
+    </div>
+    <div class="center">
+      <div class="wheel">
+        <svg viewBox="0 0 200 200">
+          <circle class="track" cx="100" cy="100" r="82"/>
+          <circle class="arc-win" id="arcWin" cx="100" cy="100" r="82" stroke-dasharray="0 515" transform="rotate(-90 100 100)"/>
+          <circle class="arc-lose" id="arcLose" cx="100" cy="100" r="82" stroke-dasharray="0 515" transform="rotate(-90 100 100)"/>
+        </svg>
+        <div class="needle" id="needle"></div>
+        <div class="wheel-mid"><b id="chanceTxt">0%</b><small style="color:var(--muted);font-size:10px">ШАНС</small></div>
+      </div>
+      <button class="btn spin-btn" id="spinBtn" disabled>АПГРЕЙД</button>
+    </div>
+    <div class="slot" id="slotT">
+      <div class="slot-tag">02 / Ціль</div>
+      <div class="slot-model" id="modelT"></div>
+      <div class="slot-info"><div class="n" id="nameT">—</div><div class="p" id="priceT"></div></div>
+    </div>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <div class="box"><h4>🎒 Ваш інвентар</h4><div class="grid" id="myGrid"></div></div>
+  <div class="box"><h4>🎯 Цілі для апгрейду</h4><div class="grid" id="targetGrid"></div></div>
+</section>
+
+<section id="shop" class="section">
+  <h2>🛒 Магазин скінів</h2>
+  <div class="box"><h4>Купуй предмети за віртуальні монети</h4><div class="grid" id="shopGrid"></div></div>
+</section>
+
+<section id="tasks" class="section">
+  <h2>💰 Завдання та заробіток</h2>
+  <div id="taskList"></div>
+</section>
+
+<section id="inventory" class="section">
+  <h2>🎒 Мій інвентар</h2>
+  <div class="box"><div class="grid" id="fullGrid"></div></div>
+</section>
+
+<section id="history" class="section">
+  <h2>📜 Історія апгрейдів</h2>
+  <div class="box" id="histList"></div>
+</section>
+
+<section id="profile" class="section">
+  <h2>👤 Мій профіль</h2>
+  <div class="stats">
+    <div class="stat"><div class="stat-v" id="sTotal">0</div><div class="stat-l">Апгрейдів</div></div>
+    <div class="stat"><div class="stat-v" id="sWins" style="color:#4ade80">0</div><div class="stat-l">Виграшів</div></div>
+    <div class="stat"><div class="stat-v" id="sLoss" style="color:#ff7189">0</div><div class="stat-l">Програшів</div></div>
+    <div class="stat"><div class="stat-v" id="sWr">0%</div><div class="stat-l">Вінрейт</div></div>
+    <div class="stat"><div class="stat-v" id="sBest">0</div><div class="stat-l">Найкращий</div></div>
+  </div>
+  <div class="box">
+    <h4>🎁 Активувати промокод</h4>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="promoInput" placeholder="Введи промокод...">
+      <button class="btn" onclick="applyPromo()">Застосувати</button>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-bottom:8px">Доступні промокоди SKINKRAFT:</p>
+    <div class="promo-list" id="promoList"></div>
+  </div>
+</section>
+
+<section id="settings" class="section">
+  <h2>⚙️ Налаштування SKINKRAFT</h2>
+  <div class="box">
+    <h4>🎨 Теми оформлення</h4>
+    <div class="theme-btns">
+      <button class="theme-btn active" data-theme="dark">🌙 Темна</button>
+      <button class="theme-btn" data-theme="light">☀️ Світла</button>
+      <button class="theme-btn" data-theme="halloween">🎃 Хелловін</button>
+      <button class="theme-btn" data-theme="christmas">🎄 Новорічна</button>
+    </div>
+  </div>
+  <div class="box">
+    <h4>🌐 Мова інтерфейсу</h4>
+    <div class="lang-btns">
+      <button class="lang-btn active" data-lang="uk">Українська</button>
+      <button class="lang-btn" data-lang="en">English</button>
+      <button class="lang-btn" data-lang="ru">Русский</button>
+    </div>
+  </div>
+  <div class="box">
+    <h4>💾 Управління даними</h4>
+    <button class="btn ghost" onclick="resetAll()" style="width:100%">🗑️ Скинути всі дані профілю</button>
+  </div>
+</section>
+</main>
+
+<footer style="text-align:center;padding:30px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);margin-top:40px">
+  © 2026 SKINKRAFT · Демо-симулятор · 200+ скінів · Не пов'язаний з реальною грою
+</footer>
+
+<script>
+// === ДАНІ ===
+const R={common:'#9fb4cf',rare:'#3b9dff',epic:'#a45bff',legend:'#ffb020',ancient:'#ff3b5c'};
+const CAT={pistol:{n:'Пістолет',e:'🔫'},smg:{n:'ПП',e:'💥'},rifle:{n:'Гвинтівка',e:'🎯'},sniper:{n:'Снайперка',e:'🏹'},shotgun:{n:'Дробовик',e:'🛡️'},mg:{n:'Кулемет',e:'⚙️'},knife:{n:'Ніж',e:'🔪'},gloves:{n:'Рукавички',e:'🧤'}};
+const SKINS={
+  common:['Пісок','Ліс','Місто','Пустеля','Камуфляж','Хакі','Патріот','Буря','Туман','Сталь'],
+  rare:['Неон','Лід','Вогонь','Сакура','Кібер','Градієнт','Місяць','Океан','Гроза','Магма'],
+  epic:['Дракон','Фенікс','Самурай','Хамелеон','Кіберпанк','Вампір','Привид','Інферно','Кракен','Вовк'],
+  legend:['Золотий','Імператор','Фараон','Тигр','Валькірія','Король','Алмаз','Платина','Олімп','Бог'],
+  ancient:['Рубін','Сапфір','Смарагд','Аметист','Чорний Діамант','Кров Дракона','Вічність','Апокаліпсис','Зоряний','Космос']
+};
+const WEAP=[
+  {w:'P350',c:'pistol',b:60},{w:'G18',c:'pistol',b:70},{w:'USP',c:'pistol',b:90},{w:'Five-SeveN',c:'pistol',b:110},{w:'Deagle',c:'pistol',b:180},{w:'Tec-9',c:'pistol',b:80},{w:'CZ-75',c:'pistol',b:100},{w:'R8',c:'pistol',b:220},
+  {w:'PP-Bizon',c:'smg',b:120},{w:'P90',c:'smg',b:250},{w:'MP7',c:'smg',b:200},{w:'UMP-45',c:'smg',b:180},{w:'Vector',c:'smg',b:300},
+  {w:'AKR',c:'rifle',b:400},{w:'M4',c:'rifle',b:450},{w:'FAMAS',c:'rifle',b:350},{w:'SCAR-H',c:'rifle',b:500},{w:'AUG',c:'rifle',b:420},{w:'ACE',c:'rifle',b:550},
+  {w:'AWP',c:'sniper',b:800},{w:'SVD',c:'sniper',b:650},{w:'Scout',c:'sniper',b:500},{w:'SSG-08',c:'sniper',b:700},
+  {w:'Nova',c:'shotgun',b:200},{w:'XM1014',c:'shotgun',b:280},{w:'MAG-7',c:'shotgun',b:220},{w:'SPAS-12',c:'shotgun',b:320},
+  {w:'M249',c:'mg',b:900},{w:'Negev',c:'mg',b:1100},
+  {w:'Керамбіт',c:'knife',b:2500},{w:'Багнет',c:'knife',b:1800},{w:'M9',c:'knife',b:2200},{w:'Метелик',c:'knife',b:3200},{w:'Фалчіон',c:'knife',b:2000},{w:'Кукрі',c:'knife',b:2400},{w:'Навіж',c:'knife',b:1900},{w:'Шип',c:'knife',b:1600},
+  {w:'Спорт',c:'gloves',b:3000},{w:'Водій',c:'gloves',b:2800},{w:'Спецназ',c:'gloves',b:3500},{w:'Бронебійні',c:'gloves',b:3800}
+];
+
+const DB=[];let id=1;
+WEAP.forEach(wp=>{
+  ['common','rare','epic','legend','ancient'].forEach(r=>{
+    const mult={common:1,rare:3,epic:8,legend:25,ancient:80}[r];
+    const skins=SKINS[r];
+    for(let i=0;i<4;i++){
+      DB.push({id:id++,name:`${wp.w} | ${skins[i%skins.length]}`,cat:wp.c,price:Math.round(wp.b*mult*(0.9+Math.random()*0.3)),r:r,emoji:CAT[wp.c].e});
+    }
+  });
+});
+DB.sort((a,b)=>a.price-b.price);
+const get=id=>DB.find(x=>x.id===id);
+
+// === СТАН ===
+let bal=+localStorage.getItem('sk_bal')||5000;
+let inv=JSON.parse(localStorage.getItem('sk_inv'))||[{id:DB[0].id,c:3},{id:DB[5].id,c:2},{id:DB[20].id,c:1}];
+let hist=JSON.parse(localStorage.getItem('sk_hist'))||[];
+let stat=JSON.parse(localStorage.getItem('sk_stat'))||{t:0,w:0,l:0,best:0};
+let usedPromo=JSON.parse(localStorage.getItem('sk_promos'))||[];
+let taskCD=JSON.parse(localStorage.getItem('sk_tasks'))||{};
+let src=null,tgt=null,spinning=false,activeMult=null,activeChance=null;
+
+const save=()=>{
+  localStorage.setItem('sk_bal',bal);localStorage.setItem('sk_inv',JSON.stringify(inv));
+  localStorage.setItem('sk_hist',JSON.stringify(hist));localStorage.setItem('sk_stat',JSON.stringify(stat));
+  localStorage.setItem('sk_promos',JSON.stringify(usedPromo));
+  localStorage.setItem('sk_tasks',JSON.stringify(taskCD));
+};
+
+// === ПРОМОКОДИ ===
+const PROMOS={WELCOME:1000,BONUS500:500,MEGA1000:1000,VIP5000:5000,START2000:2000,GIFT3000:3000,LUCKY777:777,PRO1500:1500,ELITE4000:4000,SUPER2500:2500};
+
+function applyPromo(){
+  const code=document.getElementById('promoInput').value.toUpperCase().trim();
+  if(!code)return;
+  if(usedPromo.includes(code)){toast('⚠️ Вже використано');return;}
+  if(PROMOS[code]){
+    bal+=PROMOS[code];usedPromo.push(code);updateBal();save();
+    toast('✅ +'+PROMOS[code]+' 💎');document.getElementById('promoInput').value='';
+  }else toast('❌ Невірний код');
+}
+
+// === ЗАВДАННЯ ===
+const TASKS=[
+  {id:1,t:'📺 Переглянути рекламу',d:'30 секунд відео',r:100,cd:60000},
+  {id:2,t:'🎁 Щоденний бонус',d:'Раз на день',r:500,cd:86400000},
+  {id:3,t:'🪓 Рубати дрова',d:'Зароби монети',r:150,cd:120000},
+  {id:4,t:'⛏️ Копати кісти',d:'Пошук скарбів',r:200,cd:180000},
+  {id:5,t:'🎯 5 апгрейдів',d:'Зроби 5 апгрейдів',r:300,cd:3600000},
+  {id:6,t:'🏆 3 перемоги',d:'Виграй 3 рази',r:400,cd:7200000}
+];
+
+function renderTasks(){
+  const el=document.getElementById('taskList');el.innerHTML='';
+  TASKS.forEach(task=>{
+    const last=taskCD[task.id]||0;
+    const now=Date.now();
+    const can=now>=last+task.cd;
+    const rem=can?0:Math.ceil((last+task.cd-now)/1000);
+    const div=document.createElement('div');div.className='task';
+    div.innerHTML=`<div class="task-info"><div class="task-title">${task.t}</div><div class="task-desc">${task.d}</div><div class="task-reward">+${task.r} 💎</div></div>
+      <button class="task-btn" ${can?'':'disabled'} onclick="doTask(${task.id},${task.r},${task.cd})">${can?'Виконати':'⏰ '+rem+'с'}</button>`;
+    el.appendChild(div);
+  });
+}
+function doTask(id,r,cd){bal+=r;taskCD[id]=Date.now();updateBal();save();toast('✅ +'+r+' 💎');renderTasks();}
+setInterval(renderTasks,1000);
+
+// === МНОЖНИКИ (ВСІ ВІДКРИТІ) ===
+function initMults(){
+  const mc=document.getElementById('multChips');
+  [2,3,4,5,6,7,8,9,10].forEach(m=>{
+    const b=document.createElement('button');
+    b.className='chip';
+    b.textContent='x'+m;
+    b.onclick=()=>{
+      activeMult=m;activeChance=null;
+      document.querySelectorAll('#multChips .chip').forEach(c=>c.classList.remove('active'));
+      document.querySelectorAll('#chanceChips .chip').forEach(c=>c.classList.remove('active'));
+      b.classList.add('active');
+      if(src!==null)autoTarget();
+    };
+    mc.appendChild(b);
+  });
+  const cc=document.getElementById('chanceChips');
+  [35,50,75,80,90,100].forEach(c=>{
+    const b=document.createElement('button');b.className='chip';b.textContent=c+'%';
+    b.onclick=()=>{
+      activeChance=c;activeMult=null;
+      document.querySelectorAll('#multChips .chip').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('#chanceChips .chip').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      if(src!==null)autoTarget();
+    };
+    cc.appendChild(b);
+  });
+}
+
+function autoTarget(){
+  if(src===null)return;
+  const s=get(inv[src].id);
+  let tp=activeMult?s.price*activeMult:s.price/(activeChance/95);
+  let best=null,bd=Infinity;
+  DB.forEach(it=>{if(it.price>=s.price*1.1){const d=Math.abs(it.price-tp);if(d<bd){bd=d;best=it;}}});
+  if(best){tgt=best.id;paintSlot('T',best);renderTargets();updateChance();}
+}
+
+document.getElementById('autoBtn').onclick=()=>{
+  if(!inv.length){toast('Інвентар порожній');return;}
+  let bi=0,bp=0;
+  inv.forEach((e,i)=>{const it=get(e.id);if(it.price>bp){bp=it.price;bi=i;}});
+  src=bi;paintSlot('S',get(inv[bi].id));
+  if(activeMult||activeChance)autoTarget();
+  else{
+    const s=get(inv[bi].id);const tp=s.price*3;
+    let best=null,bd=Infinity;
+    DB.forEach(it=>{if(it.price>=s.price*1.1){const d=Math.abs(it.price-tp);if(d<bd){bd=d;best=it;}}});
+    if(best){tgt=best.id;paintSlot('T',best);}
+  }
+  renderMy();renderTargets();updateChance();toast('✅ Автопідбір');
+};
+
+// === UI ===
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2500);}
+function updateBal(){document.getElementById('bal').textContent=bal.toLocaleString();}
+
+function paintSlot(w,item){
+  document.getElementById('model'+w).textContent=item?item.emoji:'';
+  document.getElementById('name'+w).textContent=item?item.name:'—';
+  document.getElementById('price'+w).textContent=item?item.price.toLocaleString()+' 💎':'';
+  document.getElementById('slot'+w).classList.toggle('filled',!!item);
+}
+
+function renderMy(){
+  const g=document.getElementById('myGrid');g.innerHTML='';
+  if(!inv.length){g.innerHTML='<div class="empty">Порожньо</div>';return;}
+  inv.forEach((e,i)=>{
+    const it=get(e.id);
+    const c=document.createElement('div');c.className='card';c.style.setProperty('--rc',R[it.r]);
+    c.innerHTML=`<span class="cnt">${e.c}x</span><span class="emoji">${it.emoji}</span><div class="nm" title="${it.name}">${it.name}</div><div class="pr">${it.price} 💎</div>`;
+    c.onclick=()=>{src=i;tgt=null;paintSlot('S',it);paintSlot('T',null);if(activeMult||activeChance)autoTarget();renderMy();renderTargets();updateChance();};
+    g.appendChild(c);
+  });
+}
+
+function renderTargets(){
+  const g=document.getElementById('targetGrid');g.innerHTML='';
+  const base=src!==null?get(inv[src].id).price:0;
+  DB.filter(x=>x.price>base*1.1).slice(0,80).forEach(it=>{
+    const c=document.createElement('div');c.className='card';c.style.setProperty('--rc',R[it.r]);
+    c.innerHTML=`<span class="emoji">${it.emoji}</span><div class="nm" title="${it.name}">${it.name}</div><div class="pr">${it.price} 💎</div>`;
+    c.onclick=()=>{if(src===null){toast('Спочатку обери свій предмет');return;}tgt=it.id;paintSlot('T',it);renderTargets();updateChance();};
+    g.appendChild(c);
+  });
+}
+
+// === МАГАЗИН (з лічильником + оновлення інвентарю) ===
+function renderShop(){
+  const g=document.getElementById('shopGrid');g.innerHTML='';
+  DB.slice(0,100).forEach(it=>{
+    const c=document.createElement('div');c.className='card';c.style.setProperty('--rc',R[it.r]);
+    const owned=inv.find(x=>x.id===it.id);
+    const cntText=owned?`<span class="cnt">${owned.c}x</span>`:'';
+    c.innerHTML=`${cntText}<span class="emoji">${it.emoji}</span><div class="nm" title="${it.name}">${it.name}</div><div class="pr">${it.price} 💎</div>`;
+    c.onclick=()=>{
+      if(bal<it.price){toast('❌ Мало монет');return;}
+      bal-=it.price;
+      const ex=inv.find(x=>x.id===it.id);
+      if(ex)ex.c++;else inv.push({id:it.id,c:1});
+      updateBal();save();
+      toast('✅ Куплено: '+it.name);
+      renderShop();
+      renderMy();
+      renderInv();
+    };
+    g.appendChild(c);
+  });
+}
+
+function renderInv(){
+  const g=document.getElementById('fullGrid');g.innerHTML='';
+  if(!inv.length){g.innerHTML='<div class="empty">Порожньо</div>';return;}
+  inv.forEach(e=>{
+    const it=get(e.id);
+    const c=document.createElement('div');c.className='card';c.style.setProperty('--rc',R[it.r]);
+    c.innerHTML=`<span class="cnt">${e.c}x</span><span class="emoji">${it.emoji}</span><div class="nm">${it.name}</div><div class="pr">${it.price} 💎</div>`;
+    g.appendChild(c);
+  });
+}
+
+function updateChance(){
+  const b=document.getElementById('spinBtn');
+  if(src===null||tgt===null){
+    document.getElementById('chanceTxt').textContent='0%';
+    document.getElementById('arcWin').setAttribute('stroke-dasharray','0 515');
+    document.getElementById('arcLose').setAttribute('stroke-dasharray','0 515');
+    b.disabled=true;return;
+  }
+  const p=get(inv[src].id).price/get(tgt).price*95;
+  const ch=Math.max(1,Math.min(85,p));
+  document.getElementById('chanceTxt').textContent=ch.toFixed(1)+'%';
+  
+  const winLen = (ch/100) * 515;
+  const loseLen = 515 - winLen;
+  document.getElementById('arcWin').setAttribute('stroke-dasharray',`${winLen} 515`);
+  document.getElementById('arcLose').setAttribute('stroke-dasharray',`${loseLen} 515`);
+  document.getElementById('arcLose').setAttribute('stroke-dashoffset',`-${winLen}`);
+  
+  b.disabled=false;b.dataset.ch=ch;
+}
+
+// === СПІН З РАНДОМНОЮ СТРІЛКОЮ ===
+document.getElementById('spinBtn').onclick=()=>{
+  if(spinning||src===null||tgt===null)return;
+  spinning=true;
+  const ch=+document.getElementById('spinBtn').dataset.ch;
+  const source=get(inv[src].id),target=get(tgt);
+  inv[src].c--;if(inv[src].c<=0)inv.splice(src,1);
+  const win=Math.random()*100<=ch;
+  const needle=document.getElementById('needle');
+  
+  needle.style.transition='none';
+  needle.style.transform='translateX(-50%) rotate(0deg)';
+  void needle.offsetWidth;
+  
+  let finalAngle;
+  if(win){
+    const winZone = ch * 3.6;
+    finalAngle = winZone * (0.1 + Math.random() * 0.8);
+  } else {
+    const loseZoneStart = ch * 3.6;
+    const loseZoneSize = 360 - loseZoneStart;
+    finalAngle = loseZoneStart + loseZoneSize * (0.1 + Math.random() * 0.8);
+  }
+  
+  const totalRotation = 2160 + finalAngle;
+  needle.style.transition='transform 4s cubic-bezier(.15,.85,.25,1)';
+  needle.style.transform=`translateX(-50%) rotate(${totalRotation}deg)`;
+  
+  document.getElementById('spinBtn').disabled=true;
+  document.getElementById('result').classList.remove('show');
+
+  setTimeout(()=>{
+    const res=document.getElementById('result');
+    if(win){
+      const ex=inv.find(x=>x.id===target.id);
+      if(ex)ex.c++;else inv.push({id:target.id,c:1});
+      stat.w++;if(target.price>stat.best)stat.best=target.price;
+      res.className='result show win';res.textContent='🎉 ПЕРЕМОГА! '+target.name;
+    }else{
+      stat.l++;res.className='result show lose';res.textContent='💥 Програш. '+source.name+' втрачено';
+    }
+    stat.t++;
+    hist.push({id:win?target.id:source.id,win:win,time:new Date().toLocaleTimeString('uk-UA'),price:win?target.price:source.price});
+    if(hist.length>50)hist.shift();
+    save();updateBal();src=null;tgt=null;
+    paintSlot('S',null);paintSlot('T',null);renderMy();renderTargets();updateChance();renderProfile();
+    spinning=false;
+    
+    setTimeout(()=>{
+      needle.style.transition='transform 1s ease-out';
+      needle.style.transform='translateX(-50%) rotate(0deg)';
+    },500);
+  },4200);
+};
+
+function renderProfile(){
+  document.getElementById('sTotal').textContent=stat.t;
+  document.getElementById('sWins').textContent=stat.w;
+  document.getElementById('sLoss').textContent=stat.l;
+  document.getElementById('sWr').textContent=(stat.t?((stat.w/stat.t)*100).toFixed(1):0)+'%';
+  document.getElementById('sBest').textContent=stat.best.toLocaleString();
+}
+
+function renderHist(){
+  const el=document.getElementById('histList');
+  if(!hist.length){el.innerHTML='<div class="empty">Порожньо</div>';return;}
+  el.innerHTML='';
+  hist.slice().reverse().forEach(h=>{
+    const it=get(h.id);
+    const r=document.createElement('div');r.className='hist-row';
+    r.innerHTML=`<div style="display:flex;gap:10px;align-items:center"><span style="font-size:28px">${it.emoji}</span><div><b style="font-size:13px">${it.name}</b><div style="color:var(--muted);font-size:11px">${h.time} · ${h.price} 💎</div></div></div><span class="${h.win?'ok':'no'}">${h.win?'✓ WIN':'✗ LOSE'}</span>`;
+    el.appendChild(r);
+  });
+}
+
+function renderPromos(){
+  const el=document.getElementById('promoList');el.innerHTML='';
+  Object.keys(PROMOS).forEach(code=>{
+    const d=document.createElement('div');d.className='promo-code';
+    d.textContent=code+' (+'+PROMOS[code]+')';
+    el.appendChild(d);
+  });
+}
+
+// === НАВІГАЦІЯ (з оновленням інвентарю при переході) ===
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='upgrade'){renderMy();renderTargets();updateChance();}
+  if(b.dataset.tab==='shop')renderShop();
+  if(b.dataset.tab==='tasks')renderTasks();
+  if(b.dataset.tab==='inventory')renderInv();
+  if(b.dataset.tab==='history')renderHist();
+  if(b.dataset.tab==='profile'){renderProfile();renderPromos();}
+});
+
+// === ТЕМИ ===
+document.querySelectorAll('.theme-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.theme-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.body.setAttribute('data-theme',b.dataset.theme);
+  localStorage.setItem('sk_theme',b.dataset.theme);
+  updateDeco();
+});
+document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.lang-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  localStorage.setItem('sk_lang',b.dataset.lang);
+});
+
+function resetAll(){
+  if(confirm('Скинути всі дані SKINKRAFT?')){
+    Object.keys(localStorage).forEach(key=>{if(key.startsWith('sk_'))localStorage.removeItem(key);});
+    location.reload();
+  }
+}
+
+// === ДЕКОРАЦІЇ ===
+function updateDeco(){
+  document.querySelectorAll('.deco').forEach(d=>d.remove());
+  const theme=document.body.getAttribute('data-theme');
+  let items=[];
+  if(theme==='halloween')items=['🎃','🦇','🕸️','👻','💀','🕷️'];
+  else if(theme==='christmas')items=['🎄','🍫','🎁','⭐','🎅','❄️','🍬'];
+  for(let i=0;i<8;i++){
+    const d=document.createElement('div');d.className='deco';
+    d.textContent=items[Math.floor(Math.random()*items.length)];
+    d.style.top=Math.random()*80+'%';
+    d.style.animationDuration=(15+Math.random()*20)+'s';
+    d.style.animationDelay=(-Math.random()*20)+'s';
+    document.body.appendChild(d);
+  }
+}
+
+// === СТАРТ ===
+const savedTheme=localStorage.getItem('sk_theme');
+if(savedTheme){document.body.setAttribute('data-theme',savedTheme);document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===savedTheme));}
+updateDeco();
+initMults();
+updateBal();
+renderMy();
+renderTargets();
+updateChance();
+renderProfile();
+renderPromos();
+</script>
+</body>
+</html>
